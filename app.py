@@ -26,68 +26,6 @@ data['PREDIKAT id'] = data['PREDIKAT'].factorize()[0]
 kategori_id_data = data[['PREDIKAT', 'PREDIKAT id']].drop_duplicates().sort_values('PREDIKAT id')
 kategori_to_id = dict(kategori_id_data.values)
 PREDIKAT = dict(kategori_id_data[['PREDIKAT id', 'PREDIKAT']].values)
-#Extract data
-X = data.iloc[:,2:9].values
-y = data.iloc[:,-1].values
-# membagi data set menggunakan sklearn
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 20)
-
-def getEquation():
-    def Fraction(equ, num, den, res):
-        return f'<div class="All"><div class="Sum">{equ} =</div><span class="Fraction"><span class="Numerator">{num}</span><span class="Denominator">{den}</span></span><div class="Sum"> = {res}</div></div>'
-    myEq = []
-    logit_model=sm.MNLogit(y_train,sm.add_constant(X_train))
-    result=logit_model.fit()
-    df = pd.read_html(result.summary().tables[1].as_html())[0]
-    gi=1
-    resMath = []
-    for i, (var, coef) in enumerate(zip(df['y=1'].values, df['coef'].values)):
-        if i==0 or i==8:
-            eq =f'g<sub>{gi}</sub>(x) = '
-            calculate = 0
-        if i !=8:
-            coef = float(coef)
-            if coef >= 0:
-                eq += f'+ {coef}'
-            else:
-                eq += f' {coef}'
-            if var != 'const':
-                eq += f' {var} '
-            calculate += coef
-        if i==len(df)//2-1 or i==len(df)-1:
-            gi += 1
-            eq += ' = {:.3f}'.format(calculate)
-            myEq.append(eq)
-            resMath.append(calculate)
-
-    resMath.append(
-        math.exp(resMath[0])/(1 + math.exp(resMath[0] + math.exp(resMath[1])))
-    )
-    resMath.append(
-        math.exp(resMath[1])/(1 + math.exp(resMath[0] + math.exp(resMath[1])))
-    )
-    resMath.append(
-        1/(1 + math.exp(resMath[0] + math.exp(resMath[1])))
-    )
-    myEq.append(Fraction(
-        '&pi;<sub>1</sub>(x) ',
-        'exp({:.3f})'.format(resMath[0]),
-        '1 + exp({:.3f}) + exp({:.3f})'.format(resMath[0], resMath[1]),
-        resMath[2]
-    ))
-    myEq.append(Fraction(
-        '&pi;<sub>2</sub>(x) ',
-        'exp({:.3f})'.format(resMath[1]),
-        '1 + exp({:.3f}) + exp({:.3f})'.format(resMath[0], resMath[1]),
-        resMath[3]
-    ))
-    myEq.append(Fraction(
-        '&pi;<sub>3</sub>(x) ',
-        '1',
-        '1 + exp({:.3f}) + exp({:.3f})'.format(resMath[0], resMath[1]),
-        resMath[4]
-    ))
-    return myEq
 
 def termFrequency():
     ds = pd.read_csv('data/dataset term frequency.csv', sep=';')
@@ -122,11 +60,11 @@ def index():
             pred = model.predict(dataPredict)
             predictRes = PREDIKAT[pred[-1]]
 
-            return render_template('index.html', s=True, data=dictData, predict=predictRes, eq=getEquation(), termFreq=termFrequency())
+            return render_template('index.html', s=True, data=dictData, predict=predictRes, termFreq=termFrequency())
 
-    return render_template('index.html', predictStatus=False, eq=getEquation(), termFreq=termFrequency())
+    return render_template('index.html', predictStatus=False, termFreq=termFrequency())
 
-
+#run flask server
 if __name__ == '__main__':
 #   logging.basicConfig(filename='static/error.log',level=logging.DEBUG)
   app.run(host='0.0.0.0',port=80, debug=True)
